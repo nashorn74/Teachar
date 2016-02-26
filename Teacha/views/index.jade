@@ -1,0 +1,23 @@
+extends layout
+
+block content
+  h1= title
+  p Welcome to #{title}
+  p
+  a(href="/admin/manage/news") 새소식 관리
+  p
+  a(href="/admin/manage/request") 상담요청 관리
+  p 금일 등록된 상담요청 건수 : #{request_count} 건
+  p
+  a(href="/admin/manage/req_teacher") 선생님신청 관리
+  p 금일 등록된 선생님신청 건수 : #{reqteacher_count} 건
+  p
+  a(href="/admin/manage/bbs") 과외후기 관리
+  p 금일 등록된 과외후기 건수 : #{board_count} 건
+  p
+  a(href="/admin/manage/qna") Q&A 관리
+  p 금일 등록된 Q&A 건수 : #{qna_count} 건
+  p
+  form( method= "post" action="/admin/logout")
+    div
+      input(type="submit", value="로그아웃")

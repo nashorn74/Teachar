@@ -1,0 +1,19 @@
+extends layout
+
+block content
+  h1= title
+  #articles
+    - each article in articles
+      div.article
+        div.created_at= article.created_at
+        div.title 
+            a(href="/admin/manage/news/"+article._id)!= article.title
+        div.body= article.body
+        form(method="post",action="/admin/manage/news/delete")
+          input( type="hidden", name="id", value=article._id.toHexString())
+          input(type="submit", value="삭제")
+      p
+  p
+  p
+  div
+      a(href="/admin/manage/news/new") 새소식 추가하기

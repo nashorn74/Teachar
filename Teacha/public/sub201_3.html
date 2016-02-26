@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+	<title>위드티처</title>
+	<link type="text/css" rel="stylesheet" href="include/css/reset.css" />
+	<link type="text/css" rel="stylesheet" href="include/css/base.css" />
+
+	<script src="include/js/jquery-1.11.3.min.js" type="text/javascript"></script>
+	<script src="include/js/common.js" type="text/javascript"></script>
+     <script src="/socket.io/socket.io.js"></script>
+     <script type="text/javascript" src="http://jsgetip.appspot.com"></script><!-- IP가져오기 위한 부분 -->
+ 
+ 	<script>
+    	var article_id = "";
+		var Request = function() {
+			this.getParameter = function(name) {
+				var rtnval = '';
+				var nowAddress = unescape(location.href);
+				var parameters = (nowAddress.slice(nowAddress.indexOf('?')+1,nowAddress.length)).split('&');
+				for (var i = 0; i < parameters.length; i++) {
+					var varName = parameters[i].split('=')[0];
+					if (varName.toUpperCase() == name.toUpperCase()) {
+						rtnval = parameters[i].split('=')[1];
+						break;
+					}
+				}
+				if (name == 'article_id') {
+					article_id = rtnval;
+					
+					if (article_id.indexOf('#') != -1)
+						article_id = article_id.substring(0,article_id.indexOf('#'));
+				}
+			}
+		}
+		var request = new Request();
+		request.getParameter('article_id');
+	</script>
+ 
+    <script language="javascript">
+    
+    var keyword = "";
+
+    
+    $(document).ready(function(){
+    	socket = io.connect();
+    	
+    	$("#board_text").html('');
+    	$("#board_comment").html('');
+    	socket.emit('get_qna_article','{"ip":"'+ip()+'","_id":"'+article_id+'"}');
+		
+		socket.on('socket_evt_get_qna_article',function(data){
+			data = JSON.parse(data);
+			data = data[0];
+			var contents =
+				'<dt>제목</dt>'+
+					'<dd>'+data.title+'</dd>'+
+				'<dt>글쓴이</dt>'+
+					'<dd class="form2Writer">'+data.name+'</dd>'+
+				'<dt>날짜</dt>'+
+					'<dd class="form2Date">'+data.yy+'-'+data.mm+'-'+data.dd+'</dd>'+
+				'<dt>조회</dt>'+
+					'<dd class="form2Count">'+data.review_count+'</dd>'+
+				'<dt class="form2Contents">내용</dt>'+
+					'<dd class="form2Contents">'+
+						'<p>'+data.message+'</p>'+
+					'</dd>';
+			$("#board_text").html(contents);
+			/*$("#board_text").html('<br><h4>'+data.title+'</h4><br>글쓴이 : '+data.name+'<p align=right>작성일 : '+
+					data.yy+'-'+data.mm+'-'+data.dd+' '+data.hh+':'+data.mm2+'&nbsp;&nbsp;&nbsp;&nbsp;조회수 : '+
+					data.review_count+'</p>'+data.message+'<br><br>');*/
+			$("#board_edit_name").val(data.name);
+			$("#board_edit_title").val(data.original_title);
+			$("#board_edit_message").val(data.original_message);
+			$("#board_comment").html('');
+			for (var i = 0; i < data.comments.length; i++) {
+				var obj = data.comments[i];
+				var contents = 
+					'<li>'+
+						'<ul class="reList clearfix">'+
+							'<li class="reId">'+obj.name+'</li>'+
+							'<li class="reDate">'+obj.yy+'-'+obj.mm+'-'+obj.dd+' '+obj.hh+':'+obj.mm2+'</li>'+
+							'<li class="reDel"><a href="javascript:deleteComment(\''+obj.name+'\');">삭제</a></li>'+
+							'<li class="reCon">'+obj.comment+'</li>'+
+						'</ul>'+
+					'</li>';
+				$("#board_comment").append(contents);
+				
+				/*$("#board_comment").append('<hr><b>'+obj.name+'</b>&nbsp;&nbsp;'+
+						obj.yy+'-'+obj.mm+'-'+obj.dd+' '+obj.hh+':'+obj.mm2+
+						'<p align=right><a href="javascript:deleteComment(\''+obj.name+'\');">댓글삭제</a></p>'+obj.comment+'<br><br>');*/
+			}
+		});
+		socket.on('socket_evt_delete_qna_article_success',function(data){
+			viewList();
+		});
+		socket.on('socket_evt_delete_qna_article_fail',function(data){
+			alert('암호가 틀립니다.');
+		});
+		socket.on('socket_evt_modify_qna_article_success',function(data){
+			cancelEditArticle();
+	    	socket.emit('get_qna_article','{"ip":"'+ip()+'","_id":"'+article_id+'"}');
+		});
+		socket.on('socket_evt_check_qna_article_password_success',function(data){
+			editArticle();
+		});
+		socket.on('socket_evt_check_qna_article_password_fail',function(data){
+			alert('암호가 틀립니다.');
+		});
+    });
+    
+    function deleteComment(name) {
+    	var password = prompt("댓글의 암호를 입력하세요.");
+    	if (password == null || password == undefined || password == '') {
+    		
+    	} else {
+    		socket.emit('delete_qna_comment','{"ip":"'+ip()+'","_id":"'+article_id+'","name":"'+name+
+    				'","password":"'+password+'"}');
+    	}
+    	//alert(password);
+    }
+    
+    function sendComment() {
+    	var name = $("#comment_name").val();
+    	var password = $("#comment_password").val();
+    	var hidden = $("input:checkbox[id='comment_hidden']").is(":checked");
+    	var comment = $("#comment_comment").val();
+    	//alert(name+"\n"+password+"\n"+hidden+"\n"+comment);
+    	if (name == '' || password == '' || comment == '') {
+    		alert('댓글 내용을 모두 입력하세요.')
+    	} else {
+    		socket.emit('set_qna_comment','{"ip":"'+ip()+'","_id":"'+article_id+'","name":"'+name+
+    				'","password":"'+password+'","hidden":"'+hidden+'","comment":"'+comment+'"}');
+    		$("#comment_name").val('');
+    		$("#comment_password").val('');
+    		$("input:checkbox[id='comment_hidden']").attr("checked", false);
+    		$("#comment_comment").val('');
+    	}
+    }
+    
+    function checkPassword() {
+    	var password = prompt("글의 암호를 입력하세요.");
+		if (password == null || password == undefined || password == '') {
+    		
+    	} else {
+    		socket.emit('check_qna_article_password','{"ip":"'+ip()+'","_id":"'+article_id+
+    				'","password":"'+password+'"}');
+    	}
+    }
+    
+    function editArticle() {
+    	$("#article_view").slideUp();
+    	$("#article_button").slideUp();
+    	$("#article_comment").slideUp();
+    	$("#article_edit").slideDown();
+    }
+    function cancelEditArticle() {
+    	$("#article_view").slideDown();
+    	$("#article_button").slideDown();
+    	$("#article_comment").slideDown();
+    	$("#article_edit").slideUp();
+    }
+    
+    function modifyBoard() {
+    	var name = $("#board_edit_name").val();
+    	name = encodeURIComponent(name);
+    	var title = $("#board_edit_title").val();
+    	title = encodeURIComponent(title);
+    	var message = $("#board_edit_message").val();
+    	message = encodeURIComponent(message);
+    	socket.emit('modify_qna_article','{"ip":"'+ip()+'","_id":"'+article_id+
+				'","name":"'+name+'","title":"'+title+'","message":"'+message+'"}');
+    }
+    
+    function deleteBoard() {
+    	var password = prompt("글의 암호를 입력하세요.");
+		if (password == null || password == undefined || password == '') {
+    		
+    	} else {
+    		socket.emit('delete_qna_article','{"ip":"'+ip()+'","_id":"'+article_id+
+    				'","password":"'+password+'"}');
+    	}
+    }
+    
+    function viewBoard(id) {
+    	//alert(id);
+    	$("#list").slideUp();
+    	$("#view").slideDown();
+    	socket.emit('get_qna_article','{"ip":"'+ip()+'","_id":"'+id+'"}');
+    	article_id = id;
+    }
+    
+    function viewList() {
+    	/*$("#view").slideUp();
+    	$("#list").slideDown();
+    	socket.emit('get_qna','{"ip":"'+ip()+'"}');//',"keyword":{}}');
+    	article_id = "";*/
+    	var urlString = 'sub201.html';
+        window.location.href = urlString;
+    }
+	    
+    function find() {
+    	keyword = $("#keyword").val();
+    	socket.emit('get_qna','{"ip":"'+ip()+'","keyword":"'+$("#keyword").val()+'"}');
+    	$("#keyword").val('');
+    }
+
+	</script>
+</head>
+<body class="sub2">
+	<!--wrapper-->
+	<div class="wrapper">
+
+		<!--header-->
+		<div class="header">
+			<h1><a href="http://www.withteacher.com/"><img src="img/logo.png" alt="위드티처"></a></h1>
+			<ul class="lnb">
+				<li><a href="index.html">홈</a></li>
+				<li>
+					<a href="sub101.html">회사소개</a>
+					<ul class="snb">
+						<li><a href="sub101.html">회사소개</a></li>
+						<li><a href="sub102.html">과외비</a></li>
+						<li><a href="sub103.html">진행절차</a></li>
+					</ul>
+				</li>
+				<li class="active">
+					<a href="sub201.html">게시판</a>
+					<ul class="snb">
+						<li class="active"><a href="sub201.html">Q&amp;A</a></li>
+						<li><a href="sub202.html">이용후기</a></li>
+					</ul>
+				</li>
+				<li><a href="sub301.html">상담신청</a></li>
+				<li><a href="sub401.html">선생님신청</a></li>
+			</ul>
+		</div>
+		<!--//header-->
+
+		<!--container-->
+		<div class="container clearfix">
+			<div class="sidebar">
+				<h2>게시판</h2>
+				<ul class="snb">
+					<li class="active"><a href="sub201.html">Q&amp;A</a></li>
+					<li><a href="sub202.html">이용후기</a></li>
+				</ul>
+			</div>
+			<div class="content">
+				<h2>Q&amp;A</h2>
+				
+				<!--contentForm2-->
+				<div class="contentForm2">
+					<dl class="clearfix" id="board_text">
+						<dt>제목</dt>
+							<dd>계좌번호 올립니다. 계좌번호 올립니다. 계좌번호 올립니다. 계좌번호 올립니다. 계좌번호 올립니다. </dd>
+						<dt>글쓴이</dt>
+							<dd class="form2Writer">홍길동</dd>
+						<dt>날짜</dt>
+							<dd class="form2Date">2015-08-31</dd>
+						<dt>조회</dt>
+							<dd class="form2Count">26</dd>
+						<dt class="form2Contents">내용</dt>
+							<dd class="form2Contents">
+								<p>
+									"위드티처"는 오랜 기간 쌓인 노하우를 바탕으로 정형화된 시스템과 프로세스를 구축하여 운영하고 있으며, 언제든지 고객님께서 합리적인 비용으로 만족스러운 서비스를 제공받을 수 있습니다.<br>
+									"위드티처"는 오랜 기간 쌓인 노하우를 바탕으로 정형화된 시스템과 프로세스를 구축하여 운영하고 있으며, 언제든지 고객님께서 합리적인 비용으로 만족스러운 서비스를 제공받을 수 있습니다. "위드티처"는 오랜 기간 쌓인 노하우를 바탕으로 정형화된 시스템과 프로세스를 구축하여 운영하고 있으며, 언제든지 고객님께서 합리적인 비용으로 만족스러운 서비스를 제공받을 수 있습니다.
+								</p>
+							</dd>
+					</dl>
+				</div>
+				<!--//contentForm2-->
+				
+				<div id="article_edit" class="contentForm2" style="display:none;">
+            		<dl class="clearfix">
+            			<dt>이름</dt>
+            				<dd><input type="text" name="name" id="board_edit_name"></dd>
+            			<dt>제목</dt>
+            				<dd><input type="text" name="title" id="board_edit_title" class="w100"></dd>
+            			<dt>내용</dt>
+            				<dd><textarea id="board_edit_message" class="w100"></textarea></dd>
+	            		<p><a href="javascript:modifyBoard();" class="btnGrey">수정 완료</a>
+	            		<a href="javascript:cancelEditArticle();" class="btnGrey">수정 취소</a>
+            		</dl>
+	            </div>
+
+				<!--contentForm3-->
+				<div class="contentForm3">
+					<form action="" method="post" >
+						<fieldset>
+							<legend>댓글</legend>
+
+							<ul class="reply" id="board_comment">
+								<li>
+									<ul class="reList clearfix">
+										<li class="reId">IDIDID</li>
+										<li class="reDate">2015-08-31</li>
+										<li class="reDel"><a href="#">삭제</a></li>
+										<li class="reCon">홍제역 인근 정다솔 양 수업을 맡게 된 김준현입니다. 오늘 첫 수업이 끝나 계좌번호 올려드립니다.</li>
+									</ul>
+								</li>
+								<li>
+									<ul class="reList clearfix">
+										<li class="reId">IDIDID</li>
+										<li class="reDate">2015-08-31</li>
+										<li class="reDel"><a href="#">삭제</a></li>
+										<li class="reCon">홍제역 인근 정다솔 양 수업을 맡게 된 김준현입니다. 오늘 첫 수업이 끝나 계좌번호 올려드립니다.홍제역 인근 정다솔 양 수업을 맡게 된 김준현입니다. 오늘 첫 수업이 끝나 계좌번호 올려드립니다.홍제역 인근 정다솔 양 수업을 맡게 된 김준현입니다. 오늘 첫 수업이 끝나 계좌번호 올려드립니다.<br>홍제역 인근 정다솔 양 수업을 맡게 된 김준현입니다. 오늘 첫 수업이 끝나 계좌번호 올려드립니다.</li>
+									</ul>
+								</li>
+							</ul>
+
+							<dl class="clearfix">
+								<dt class="require">이름</dt>
+									<dd><input type="text" name="name" id="comment_name"></dd>
+								<dt class="require">암호</dt>
+									<dd><input type="password" name="password" id="comment_password"></dd>
+								<dt class="pwd"><label for="checkPwd">비밀글</dt>
+									<dd class="pwd"><input type="checkbox" name="hidden" value="hidden" id="comment_hidden"></dd>
+								<dt class="require textarea">내용</dt>
+									<dd class="textarea"><textarea name="comment" id="comment_comment" rows=5 style="width: 100%;"></textarea></dd>
+							</dl>
+							<div class="clearfix">
+								<a href="javascript:sendComment();" class="btnM fRight">댓글쓰기</a>
+							</div>
+
+						</fieldset>
+					</form>
+
+				</div>
+				<!--//contentForm3-->
+
+				<div class="clearfix">
+					<ul>
+						<li class="fLeft"><a href="javascript:checkPassword();" class="btnGrey">수정</a></li>
+						<li class="fLeft"><a href="javascript:deleteBoard();" class="btnGrey">삭제</a></li>
+						<li class="fRight"><a href="javascript:viewList();" class="btnGrey">목록</a></li>
+					</ul>
+				</div>
+
+			</div>
+		</div>
+		<!--//container-->
+
+		<!--footer-->
+		<div class="footer">
+			<dl class="clearfix">
+				<dt>상호명</dt>
+					<dd>(주)오픈마인드월드</dd>
+				<dt>사업자등록번호</dt>
+					<dd>110-81-47413</dd>
+				<dt>대표</dt>
+					<dd>이지혜</dd>
+				<dt>개인정보관리책임자</dt>
+					<dd>정금호</dd>
+			</dl>
+			<dl class="clearfix">
+				<dt>사업장주소</dt>
+					<dd>서울시 구로구 구로3동 우림E-BIZ센터2차 407</dd>
+			</dl>
+			<dl class="clearfix">
+				<dt>대표전화</dt>
+					<dd>02-6010-6599</dd>
+				<dt>E-MAIL</dt>
+					<dd>OMWORLDGAME@GMAIL.COM</dd>
+			</dl>
+			<div class="copyright">COPYRIGHT 2014 OPENMINDWORLD ALL RIGHT RESERVED.</div>
+		</div>
+		<!--//footer-->
+
+	</div>
+	<!--//wrapper-->
+</body>
+</html>

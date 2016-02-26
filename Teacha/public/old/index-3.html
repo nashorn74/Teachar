@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+     <title>위드티처</title>
+     <meta charset="utf-8">
+     <link rel="icon" href="images/favicon.ico">
+     <link rel="shortcut icon" href="images/favicon.ico" />
+     <link rel="stylesheet" href="css/style.css">
+     <script src="js/jquery.js"></script>
+     <script src="js/jquery.easing.1.3.js"></script>
+     <!--script src="js/jquery-migrate-1.1.1.js"></script-->
+     <script src="js/superfish.js"></script>
+     <script src="js/jquery.equalheights.js"></script>
+     <script src="js/jquery.ui.totop.js"></script>
+     <script src="/socket.io/socket.io.js"></script>
+     <script type="text/javascript" src="http://jsgetip.appspot.com"></script><!-- IP가져오기 위한 부분 -->
+     <script>
+     	var socket = null;
+     
+     	$(function(){
+    	    $("#input_class1").click(function(){
+    	    	if ($("input:checkbox[id='input_class1']").is(":checked") == true)
+    	    		//$("input:checkbox[id='class1']").attr("checked", false);
+    	    		$('#class1').val("TRUE");
+    	    	else
+    	    		//$("input:checkbox[id='class1']").attr("checked", true);
+    	    		$('#class1').val("FALSE");
+    	    });
+    	    $("#input_class2").click(function(){
+    	    	if ($("input:checkbox[id='input_class2']").is(":checked") == true)
+    	    		$('#class2').val("TRUE");
+    	    	else
+    	    		$('#class2').val("FALSE");
+    	    });
+    	    $("#input_class3").click(function(){
+    	    	if ($("input:checkbox[id='input_class3']").is(":checked") == true)
+    	    		$('#class3').val("TRUE");
+    	    	else
+    	    		$('#class3').val("FALSE");
+    	    });
+    	    $("#input_class4").click(function(){
+    	    	if ($("input:checkbox[id='input_class4']").is(":checked") == true)
+    	    		$('#class4').val("TRUE");
+    	    	else
+    	    		$('#class4').val("FALSE");
+    	    });
+    	    $("#input_class5").click(function(){
+    	    	if ($("input:checkbox[id='input_class5']").is(":checked") == true)
+    	    		$('#class5').val("TRUE");
+    	    	else
+    	    		$('#class5').val("FALSE");
+    	    });
+    	    $("#input_class6").click(function(){
+    	    	if ($("input:checkbox[id='input_class6']").is(":checked") == true)
+    	    		$('#class6').val("TRUE");
+    	    	else
+    	    		$('#class6').val("FALSE");
+    	    });
+     	});
+     
+		$(document).ready(function(){
+			socket = io.connect();
+
+			socket.on('socket_evt_city_info',function(data){
+				//alert(data);
+				data = JSON.parse(data);
+				//alert(data.length);
+				$('select[name=box2-2]').html('');
+				for (i = 0; i < data.length; i++) {
+					var obj = data[i];
+					if (i == 0)
+						$('#address2').val(obj.area);
+					$('select[name=box2-2]').append('<option value="'+(i+1)+'">'+obj.area+'</option>');
+				}
+				
+			});
+			
+			socket.emit('get_city_info','{"city":"서울","ip":"'+ip()+'"}');
+			$('#address1').val("서울");
+			$('#school1').val("초등학교");
+			$('#school2').val("1학년");
+			$('#class1').val("FALSE");
+			$('#class2').val("FALSE");
+			$('#class3').val("FALSE");
+			$('#class4').val("FALSE");
+			$('#class5').val("FALSE");
+			$('#class6').val("FALSE");
+		});
+		
+		function getSchoolText(obj) {
+			$('#school1').val(obj.options[obj.selectedIndex].text);
+			if (obj.options[obj.selectedIndex].text == '중학생' || obj.options[obj.selectedIndex].text == '고등학생') {
+				$('select[name=box1-2]').html('');
+				for (i = 0; i < 3; i++) {
+					$('select[name=box1-2]').append('<option value="'+(i+1)+'">'+(i+1)+'학년</option>');
+				}
+			} else {
+				$('select[name=box1-2]').html('');
+				for (i = 0; i < 6; i++) {
+					$('select[name=box1-2]').append('<option value="'+(i+1)+'">'+(i+1)+'학년</option>');
+				}
+			}
+		}
+		function getYearText(obj) {
+			$('#school2').val(obj.options[obj.selectedIndex].text);
+		}
+		
+		function getAreaText(obj){
+			$('#address1').val(obj.options[obj.selectedIndex].text);
+			socket.emit('get_city_info','{"city":"'+obj.options[obj.selectedIndex].text+'","ip":"'+ip()+'"}');
+		}
+		
+		function getSubAreaText(obj){
+			$('#address2').val(obj.options[obj.selectedIndex].text);
+		}
+		
+		var pattern = "^([0-9a-zA-Z_\.-]+)@([0-9a-zA-Z_-]+)(\.[0-9a-zA-Z_-]+){1,2}$"; 
+		//var pattern = "^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$"; 
+		function isEmailAddress(str) {
+		    //str = "azamsharp@gmail.com";      
+		    //alert(str.match(pattern)); 
+		    
+		    //return str.match(pattern);    
+		    
+		    var emailRegex = /^[A-Z0-9_'%=+!`#~$*?^{}&|-]+([\.][A-Z0-9_'%=+!`#~$*?^{}&|-]+)*@[A-Z0-9-]+(\.[A-Z0-9-]+)+$/i;
+			return emailRegex.test(str);
+		}
+		
+		function formChk(){
+			//alert($('input:radio[name="call_time"]:checked').val());
+			//alert($('#call_time_text').val());
+			//alert(""+$("input:checkbox[id='input_class6']").is(":checked"));
+			//alert(""+$('#input_etc').val());
+			var class_count = 0;
+			if ($("input:checkbox[id='input_class1']").is(":checked") == true) class_count++;
+			if ($("input:checkbox[id='input_class2']").is(":checked") == true) class_count++;
+			if ($("input:checkbox[id='input_class3']").is(":checked") == true) class_count++;
+			if ($("input:checkbox[id='input_class4']").is(":checked") == true) class_count++;
+			if ($("input:checkbox[id='input_class5']").is(":checked") == true) class_count++;
+			if ($("input:checkbox[id='input_class6']").is(":checked") == true) class_count++;
+			if (class_count == 0) {
+				alert("1개 이상의 과목을 반드시 선택하세요.");
+			}else if($('#name').val()==''){
+		      	alert("이름을 입력하세요.");
+		      	$('#name').focus();
+		    }else if($('#phone').val()==''){
+		      	alert("연락처를 입력하세요.");    
+		      	$('#phone').focus();
+		    }else if($('input:radio[name="call_time"]:checked').val() == '2' && $('#call_time_text').val()==''){
+	    		alert("연락 희망시간을 입력하세요.");    
+		      	$('#call_time_text').focus();
+		    }else if ($("input:checkbox[id='input_class6']").is(":checked") == true && $('#input_etc').val()=='') {
+		    	alert("기타 과목을 입력하세요.");    
+		      	$('#input_etc').focus();
+		    }else{
+		    	if($('#email').val()!='') {
+		    		if (isEmailAddress($('#email').val()) == true) {
+		    			$('#class6text').val($('#input_etc').val());
+			    		document.form.submit(); 
+					       return true;
+			    	} else {
+			    		alert("이메일 주소가 잘못되었습니다.");
+			    		$('#email').focus();
+			    	}
+		    	} else {
+		    		$('#class6text').val($('#input_etc').val());
+		    		document.form.submit(); 
+				       return true;
+		    	}
+		    }
+		}
+		
+     
+     </script>
+     <!--[if lt IE 8]>
+       <div style=' clear: both; text-align:center; position: relative;'>
+         <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie6_countdown_bannercode">
+           <img src="http://storage.ie6countdown.com/assets/100/images/banners/warning_bar_0000_us.jpg" border="0" height="42" width="820" alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today." />
+         </a>
+      </div>
+    <![endif]-->
+     <!--[if lt IE 9]>
+      <script src="js/html5shiv.js"></script>
+      <link rel="stylesheet" media="screen" href="css/ie.css">
+    <![endif]-->
+</head>
+<body>
+<!--==============================header=================================-->
+<header>
+	<div class="container_12">
+		<div class="grid_12">
+           <h1><a href="index.html"><img src="images/logo.png" alt="BIZZ"></a></h1>
+		</div>
+    </div>
+    <nav>
+        <div class="container_12">
+            <div class="grid_12">
+                <ul class="sf-menu">
+                    <li class="current"><a href="index.html">HOME</a></li>
+                    <li><a href="index-1.html">회사소개</a>
+                    	<ul>
+                            <li><a href="index-1.html">회사소개</a></li>
+                            <li><a href="index-1-2.html">과외비</a></li>
+                            <li><a href="index-1-3.html">진행절차</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="index-2-3.html">게시판</a>
+                    	<ul>
+                            <!--li><a href="index-2.html">학습법</a></li>
+                            <li><a href="index-2-2.html">학습정보</a></li-->
+                            <li><a href="index-2-3.html">Q&A</a></li>
+                            <li><a href="index-1-4.html">이용후기</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="index-3.html">상담신청</a></li>
+                    <li><a href="index-4.html">선생님 신청</a></li>
+                </ul>
+                <div class="clear"></div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!--=======content================================-->
+<div id="content"><div class="ic"></div>
+	<div class="container_12 bot-1">
+		<div class="grid_12">
+        	<h2 class="indent-2">무료 수업 신청</h2>
+		</div>
+		<div class="grid_12">
+		* 받고자하는 서비스를 선택해주세요. (2개 과목 이상 중복 체크 가능)
+        		<p>
+            	<label><input type ="checkbox" id="input_class1" name="mobile" value="1">국어</label>
+                <label><input type ="checkbox" id="input_class2" name="mobile" value="2">영어</label >
+                <label><input type ="checkbox" id="input_class3" name="mobile" value="3">수학</label>
+                <label><input type ="checkbox" id="input_class4" name="mobile" value="4">과학</label >
+                <label><input type ="checkbox" id="input_class5" name="mobile" value="5">사회</label>
+                <label><input type ="checkbox" id="input_class6" name="mobile" value="6">기타</label >
+            	<input type="text" value="" id="input_etc" name="input_etc">
+            	</p>
+		</div>
+		<div class="grid_1">
+		<form id="form">
+			<p><span class="title">이름*</span>
+			<p><span class="title">이메일</span>
+
+			<p><span class="title">학년*</span>
+			<p><span class="title">연락처*</span>
+            <p><span class="title">연락 희망시간*</span>
+            <br><br>
+             <p><span class="title">주소*</span>
+             <br><br>
+             <p><span class="title">남기실 말씀</span>
+		</form>
+		
+		</div>
+        <div class="grid_7">	
+        	<form id="form" action="/admin/manage/freeclass/send" method="post" onSubmit="formChk();return false">
+            	<p><!--span class="title">이름*</span-->
+                <input type="text" value="" name="name" id="name">
+                <p><!--span class="title">이메일</span-->
+                <input type="text" value="" name="email" id="email">
+                <p>&nbsp;<!--span class="title">학년*</span-->
+                <select name="box1-1" onchange="getSchoolText(this)">
+					<option value="1">초등학생</option>
+					<option value="2">중학생</option>
+					<option value="3">고등학생</option>
+				</select>
+				<select name="box1-2" onchange="getYearText(this)">
+					<option value="1">1학년</option>
+					<option value="2">2학년</option>
+					<option value="3">3학년</option>
+					<option value="4">4학년</option>
+					<option value="5">5학년</option>
+					<option value="6">6학년</option>
+				</select>
+				<p><!--span class="title">연락처*</span-->
+                <input type="text" value="" name="phone" id="phone">
+                <p><!--span class="title">연락희망시간*</span-->
+                <br><br>
+                <label><input type ="radio" name="call_time" value="1" checked>무관</label>
+                <label><input type ="radio" name="call_time" value="2">직접 입력</label>
+                <input type="text" value="" name="call_time_text" id="call_time_text">
+                <p class="indent-2"><!--span class="title">주소*</span-->
+                <select name="box2-1" onchange="getAreaText(this)">
+					<option value="1">서울</option>
+					<option value="2">경기</option>
+					<option value="3">인천</option>
+					<option value="4">부산</option>
+					<option value="5">대구</option>
+					<option value="6">광주</option>
+					<option value="7">대전</option>
+					<option value="8">울산</option>
+					<option value="9">강원</option>
+					<option value="10">충남</option>
+					<option value="11">충북</option>
+					<option value="12">경북</option>
+					<option value="13">경남</option>
+					<option value="14">전북</option>
+					<option value="15">전남</option>
+					<option value="16">제주</option>
+				</select>
+				<select name="box2-2" onchange="getSubAreaText(this)">
+					<option value="1">강남구</option>
+				</select>
+				<input type="text" value="" name="address" id="address" placeholder="불필요한 개인정보 수집을 막기위해서 상세주소는 유선상담때 말씀해주셔서도 좋습니다.">
+                <p><!--span class="title">남기실 말씀</-->
+                <textarea id="message" name="message" value=""></textarea>
+                <p><input type="hidden" name="class1" id="class1" value="">
+                <p><input type="hidden" name="class2" id="class2" value="">
+                <p><input type="hidden" name="class3" id="class3" value="">
+                <p><input type="hidden" name="class4" id="class4" value="">
+                <p><input type="hidden" name="class5" id="class5" value="">
+                <p><input type="hidden" name="class6" id="class6" value="">
+                <p><input type="hidden" name="class6text" id="class6text" value="">
+            	<p><input type="hidden" name="school1" id="school1" value="">
+            	<p><input type="hidden" name="school2" id="school2" value="">
+            	<p><input type="hidden" name="address1" id="address1" value="">
+            	<p><input type="hidden" name="address2" id="address2" value="">
+            	<p><br><br><input type="submit" value="신청서 접수하기">
+            </form>
+		</div>
+	</div>
+	              
+</div>
+<!--==============================footer=================================-->
+<footer>
+	<div class="container_12">
+		<div class="grid_8">
+			<span>
+			상호명:(주)오픈마인드월드 | 사업자등록번호:110-81-47413 | 대표:이지혜 | 개인정보관리책임자:정금호<br>
+			사업장주소:서울시 구로구 구로3동 우림e-biz센터2차 407<br>
+			대표전화:<B>02-6010-6599</B> | E-mail:omworldgame@gmail.com<br>
+			Copyright 2014 OpenMindWorld All right reserved.<br>
+			Website designed by <a href="http://www.templatemonster.com/" rel="nofollow" target="_blank">TemplateMonster.com</a>
+			</span>
+		</div>
+        <div class="grid_4">
+        	<ul class="soc-icon">
+            	<li><a href="#"><img src="images/icon-3.png" alt=""></a></li>
+                <li><a href="#"><img src="images/icon-2.png" alt=""></a></li>
+                <li><a href="mailto:omworldgame@gmail.com"><img src="images/icon-1.png" alt=""></a></li>
+            </ul>
+        </div>
+	</div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,28 @@
+extends layout
+
+block content
+  h1= title
+  #articles
+    - each article in articles
+      div.article
+        div.created_at= article.created_at
+        div.name 이름: 
+            a(href="/admin/manage/freeclass/"+article._id)!= article.name
+        div.email 이메일:
+            = article.email
+        div.school 학교/학년:
+            = article.school+" "+article.year
+        div.phone 연락처:
+            = article.phone 
+        div.calltime 연락희망시간(1:무관,2:직접입력):
+            = article.calltime+" "+article.calltimetext
+        div.city 지역:
+            = article.city+" "+article.area+" "+article.address
+        div.classes 선택된 수업:
+            = article.classes
+        div.message= article.message
+        form(method="post",action="/admin/manage/freeclass/delete")
+          input( type="hidden", name="id", value=article._id.toHexString())
+          input(type="submit", value="삭제")
+      p
+

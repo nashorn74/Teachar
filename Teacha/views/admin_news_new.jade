@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  h1= title
+  div= date
+  form( method= "post")
+    div
+      div
+         span 새소식 제목 :
+         input(type="text", name="title")
+      div
+         span 새소식 내용 :
+         textarea( name="body", rows=20)
+      div
+         input(type="submit", value="추가하기")

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+	<title>위드티처</title>
+	<link type="text/css" rel="stylesheet" href="include/css/reset.css" />
+	<link type="text/css" rel="stylesheet" href="include/css/base.css" />
+
+	<script src="include/js/jquery-1.11.3.min.js" type="text/javascript"></script>
+	<script src="include/js/common.js" type="text/javascript"></script>
+	
+	<!--script src="js/jquery.js"></script>
+     <script src="js/jquery.easing.1.3.js"></script>
+     <script src="js/jquery-migrate-1.1.1.js"></script>
+     <script src="js/superfish.js"></script>
+     <script src="js/jquery.equalheights.js"></script>
+     <script src="js/tms-0.4.1.js"></script>
+     <script src="js/jquery.carouFredSel-6.1.0-packed.js"></script>
+     <script src="js/jquery.ui.totop.js"></script-->
+     <script src="/socket.io/socket.io.js"></script>
+     <script type="text/javascript" src="http://jsgetip.appspot.com"></script><!-- IP가져오기 위한 부분 -->
+     <script>
+      /*$(window).load(function(){
+		  $('.slider')._TMS({
+			show:0,
+			pauseOnHover:false,
+			prevBu:'.prev',
+			nextBu:'.next',
+			playBu:false,
+			duration:800,
+			preset:'fade',
+			easing:'easeOutQuad', 
+			pagination:true,//'.pagination',true,'<ul></ul>'
+			pagNums:false,
+			slideshow:8000,
+			numStatus:false,
+			banners:'fade',
+			waitBannerAnimation:false,
+			progressBar:false
+		  })  
+      });
+      
+	  $(window).load (
+		 function(){$('.carousel1').carouFredSel({auto: false,prev: '.prev1',next: '.next1', width: 960, items: {
+			 visible : {min: 4, max: 4},
+		  }, 
+		  responsive: false, 
+		  scroll: 1, 
+		  mousewheel: false,
+		  swipe: {onMouse: false, onTouch: false}});
+	  });      */
+	  
+	//모바일 브라우저 문자열 체크
+	  var mobileInfo = new Array('Android', 'iPhone', 'iPod', 'BlackBerry', 'Windows CE', 'SAMSUNG', 'LG', 'MOT', 'SonyEricsson');
+	  for (var info in mobileInfo){
+	      if (navigator.userAgent.match(mobileInfo[info]) != null){
+	          // 모바일 수행
+	          var urlString = './mobile/index.html';
+	          window.location.href = urlString;
+	          break;
+	      }
+	  }
+	  
+	  var socket = null;
+		$(document).ready(function(){
+			socket = io.connect();
+			
+			$('.list-news').html('');
+			socket.emit('get_news','{"ip":"'+ip()+'"}');
+			
+			socket.on('socket_evt_get_news',function(data){
+				//alert(data);
+				data = JSON.parse(data);
+				//alert(data.length);
+				$('.list-news').html('');
+				for (i = 0; i < data.length; i++) {
+					if (i > 3) 
+						break;
+					var month = new Array("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug", "Sep","Oct","Nov","Dec");
+					var obj = data[i];
+					var contents = 
+						'<li>'+
+							'<a href="#">'+
+								'<span class="noticeTit">'+obj.title+'</span>'+
+								'<span class="noticeDate">'+obj.yy+'-'+obj.mm+'-'+obj.dd+'</span>'+
+							'</a>'+
+						'</li>';
+					$('.list-news').append(contents);
+					
+					/*$('.list-news').append('<li><div class="wrap"><div class="badge">'+obj.dd+'<span>'+month[obj.mm-1]+
+							'</span></div><span class="text-info">'+obj.title+'</span><br><a href="#">'+
+							obj.yy+'.'+obj.mm+'.'+obj.dd+'</a></div>'+obj.body+'</li>');*/
+				}
+			});
+		});
+
+     </script>
+
+</head>
+<body>
+	<!--wrapper-->
+	<div class="wrapper">
+
+		<!--header-->
+		<div class="header">
+			<h1><a href="http://www.withteacher.com/"><img src="img/logo.png" alt="위드티처"></a></h1>
+			<ul class="lnb">
+				<li><a href="index.html">홈</a></li>
+				<li>
+					<a href="sub101.html">회사소개</a>
+					<ul class="snb">
+						<li><a href="sub101.html">회사소개</a></li>
+						<li><a href="sub102.html">과외비</a></li>
+						<li><a href="sub103.html">진행절차</a></li>
+					</ul>
+				</li>
+				<li>
+					<a href="sub201.html">게시판</a>
+					<ul class="snb">
+						<li><a href="sub201.html">Q&amp;A</a></li>
+						<li><a href="sub202.html">이용후기</a></li>
+					</ul>
+				</li>
+				<li><a href="sub301.html">상담신청</a></li>
+				<li><a href="sub401.html">선생님신청</a></li>
+			</ul>
+		</div>
+		<!--//header-->
+
+		<!--container-->
+		<div class="container clearfix">
+			<div class="mainTop">
+				<h2>교육컨설팅 서비스 <b>위드티처</b></h2>
+				<p>
+					"위드티처"는 오랜기간 사용되면서 검증된 선생님 매칭 시스템을 활용하여,<br>
+					학생에게 적합한 선생님을 매칭해주고 지속적으로 관리해주는 교육컨설팅 서비스입니다.
+				</p>
+			</div>
+			
+			<div class="boxWrap clearfix">
+				<div class="mainBox box1">
+					<p>
+						"위드티처"는 오랜 기간 쌓인 노하우를 바탕으로 정형화된 시스템과 프로세스를 구축하여 운영하고 있으며, 언제든지 고객님께서 합리적인 비용으로 만족스러운 서비스를 제공받을 수 있습니다.</p>
+				</div>
+				<div class="mainBox box2">
+					<p>
+						"위드티처"의 서비스는 철저하게  "고객만족의 극대화"에 맞춰져 있습니다. 항상 고객님의 요구 사항에 귀를 기울이고, 교육 서비스의 진행과정을 모니터링하여 만족스러운 서비스를 제공받으실 수 있도록 노력하겠습니다.
+					</p>
+				</div>
+				<div class="mainBox box3">
+					<p>
+						"위드티처"는 다년간 활용되면서 충분히 검증된 전문 매칭 시스템을 이용하여 서비스되고 있기 때문에, 주먹구구식으로 제공되었던 기존의 서비스에 비해 만족도가 높은 교육 효과를 얻을수 있습니다.
+					</p>
+				</div>
+				<div class="mainBox box4">
+					<p>
+						고객님의 서비스 이용후기를 통해서 피드백을 적극 수렴하여 양질의 교육컨설팅 서비스를 제공하고 있습니다. 궁금하신 점은 Q&A를 활용하여 언제든지 문의하시면 신속하게 답변 드리도록 하겠습니다.
+					</p>
+				</div>
+			</div>
+
+			<div class="mainBot">
+				<div class="notice">
+					<div class="noticeH">공지사항</div>
+					<ul class="list-news">
+						<li>
+							<a href="#">
+								<span class="noticeTit">위드티처"는 오랜 기간 쌓인 노하우를 바탕으로 정형화된 시스템과 프로세스를 구축하여 운영하고 있으며, 언제든지 고객님께서 합리적인 비용으로 만족스러운 서비스를 제공받을 수 있습니다.</span>
+								<span class="noticeDate">2015-08-31</span>
+							</a>
+						</li>
+						<li>
+							<a href="#">
+								<span class="noticeTit">위드티처"는 오랜 기간 쌓인 노하우를 바탕으로 정형화된 시스템과 프로세스를 구축하여 운영하고 있으며, 언제든지 고객님께서 합리적인 비용으로 만족스러운 서비스를 제공받을 수 있습니다.</span>
+								<span class="noticeDate">2015-08-31</span>
+							</a>
+						</li>
+						<li>
+							<a href="#">
+								<span class="noticeTit">위드티처"는 오랜 기간 쌓인 노하우를 바탕으로 정형화된 시스템과 프로세스를 구축하여 운영하고 있으며, 언제든지 고객님께서 합리적인 비용으로 만족스러운 서비스를 제공받을 수 있습니다.</span>
+								<span class="noticeDate">2015-08-31</span>
+							</a>
+						</li>
+						<li>
+							<a href="#">
+								<span class="noticeTit">위드티처"는 오랜 기간 쌓인 노하우를 바탕으로 정형화된 시스템과 프로세스를 구축하여 운영하고 있으며, 언제든지 고객님께서 합리적인 비용으로 만족스러운 서비스를 제공받을 수 있습니다.</span>
+								<span class="noticeDate">2015-08-31</span>
+							</a>
+						</li>
+					</ul>
+					<div class="more"><a href="#"><img src="img/mainBotMore.png" alt="더 보기"></a></div>
+				</div>
+				<div class="mainBotBox">
+					<ul>
+						<li><a href="sub301.html">상담신청</a></li>
+						<li><a href="sub401.html">선생님신청</a></li>
+						<li><a href="sub201.html">Q&amp;A</a></li>
+						<li><a href="sub202.html">이용후기</a></li>
+					</ul>
+				</div>
+			</div>
+
+		</div>
+		<!--//container-->
+
+		<!--footer-->
+		<div class="footer">
+			<dl class="clearfix">
+				<dt>상호명</dt>
+					<dd>(주)오픈마인드월드</dd>
+				<dt>사업자등록번호</dt>
+					<dd>110-81-47413</dd>
+				<dt>대표</dt>
+					<dd>이지혜</dd>
+				<dt>개인정보관리책임자</dt>
+					<dd>정금호</dd>
+			</dl>
+			<dl class="clearfix">
+				<dt>사업장주소</dt>
+					<dd>서울시 구로구 구로3동 우림E-BIZ센터2차 407</dd>
+			</dl>
+			<dl class="clearfix">
+				<dt>대표전화</dt>
+					<dd>02-6010-6599</dd>
+				<dt>E-MAIL</dt>
+					<dd>OMWORLDGAME@GMAIL.COM</dd>
+			</dl>
+			<div class="license"><a href="http://www.freepik.com" target="_blank">DESIGNED BY FREEPIK</a></div>
+			<div class="copyright">COPYRIGHT 2014 OPENMINDWORLD ALL RIGHT RESERVED.</div>
+		</div>
+		<!--//footer-->
+
+	</div>
+	<!--//wrapper-->
+</body>
+</html>

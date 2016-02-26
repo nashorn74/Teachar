@@ -1,0 +1,36 @@
+extends layout
+
+block content
+  h1= title
+  #articles
+    - each article in articles
+      div.article
+        div.created_at= article.created_at
+        div.name 이름: 
+            a(href="/admin/manage/req_teacher/"+article._id)!= article.name
+        div.phone 연락처:
+            = article.phone 
+        div.email 이메일:
+            = article.email
+        div.gender 성별(1:남성,2:여성):
+            = article.gender
+        div.type 유형(1:학생,2:전문):
+            = article.type
+        div.school 학교/전공:
+            = article.school+" "+article.major
+        div.city1 관심지역1:
+            = article.city1+" "+article.area1
+        div.city2 관심지역2:
+            = article.city2+" "+article.area2
+        div.city3 관심지역3:
+            = article.city3+" "+article.area3
+        div.eduyear 경력(1:1년이하,2:1~2년,3:3~4년,4:5~6년,5:7~9년,6:10년이상):
+            = article.eduyear
+        div.classes 수업 가능 과목:
+            = article.classes
+        div.message= article.message
+        form(method="post",action="/admin/manage/req_teacher/delete")
+          input( type="hidden", name="id", value=article._id.toHexString())
+          input(type="submit", value="삭제")
+      p
+

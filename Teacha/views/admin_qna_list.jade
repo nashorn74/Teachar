@@ -1,0 +1,17 @@
+extends layout
+
+block content
+  h1= title
+  #articles
+    - each article in articles
+      div.article
+        div.created_at= article.created_at
+        div.type= article.type 
+        div.title 
+            a(href="/admin/manage/qna/"+article._id)!= article.title
+        div.message= article.message
+        form(method="post",action="/admin/manage/qna/delete")
+          input( type="hidden", name="id", value=article._id.toHexString())
+          input(type="submit", value="삭제")
+      p
+

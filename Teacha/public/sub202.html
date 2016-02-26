@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+	<title>위드티처</title>
+	<link type="text/css" rel="stylesheet" href="include/css/reset.css" />
+	<link type="text/css" rel="stylesheet" href="include/css/base.css" />
+
+	<script src="include/js/jquery-1.11.3.min.js" type="text/javascript"></script>
+	<script src="include/js/common.js" type="text/javascript"></script>
+	<!--script src="js/jquery.js"></script>
+     <script src="js/jquery.easing.1.3.js"></script>
+     <script src="js/jquery-migrate-1.1.1.js"></script>
+     <script src="js/superfish.js"></script>
+     <script src="js/jquery.equalheights.js"></script>
+     <script src="js/jquery.ui.totop.js"></script-->
+     <script src="/socket.io/socket.io.js"></script>
+     <script type="text/javascript" src="http://jsgetip.appspot.com"></script><!-- IP가져오기 위한 부분 -->
+     <!--script src="js/forms.js"></script-->
+     <!--style type="text/css">
+    select.box {
+    	position:relative;
+    float:right;
+    }
+	table.gridtable {
+		font-family: verdana,arial,sans-serif;
+		font-size:11px;
+		color:#333333;
+		border-width: 1px;
+		border-color: #666666;
+		border-collapse: collapse;
+	}
+	table.gridtable th {
+		border-width: 1px;
+		padding: 8px;
+		border-style: solid;
+		border-color: #666666;
+		background-color: #dedede;
+	}
+	table.gridtable td {
+		border-width: 1px;
+		padding: 8px;
+		border-style: solid;
+		border-color: #666666;
+		background-color: #ffffff;
+	}
+	th.gridtitle {
+		border-width: 1px;
+		padding: 8px;
+		border-style: solid;
+		border-color: #666666;
+		background-color: #dedede;
+		width: 650px;
+	}
+	</style-->
+    <script language="javascript">
+    
+    var keyword = "";
+    var typeStr = "전체";
+    var article_id = "";
+    function getText(obj){
+		//alert(obj.options[obj.selectedIndex].text);  // 텍스트의 값을 가져온다.
+		typeStr = obj.options[obj.selectedIndex].text;
+		keyword = "";
+		socket.emit('get_bbs','{"ip":"'+ip()+'","type":"'+typeStr+'"}');
+	}
+    
+    $(document).ready(function(){
+    	socket = io.connect();
+		
+    	$("#gridtable").html('');
+		$("#page").html('');
+		socket.emit('get_bbs','{"ip":"'+ip()+'"}');//',"keyword":{}}');
+		
+		socket.on('socket_evt_get_bbs',function(data){
+			//alert(data);
+			data = JSON.parse(data);
+			//alert(data.docs.length);
+			$("#gridtable").html('');
+			//$("#gridtable").html('<tr><th>번호</th><th class="gridtitle">제목</th><th>글쓴이</th><th>날짜</th><th>조회</th></tr>');
+			$("#page").html('');
+			for (i = 0; i < data.docs.length; i++) {
+				var obj = data.docs[i];
+				var contents = 
+					'<tr>'+
+						'<td>'+(i+1)+'</td>'+
+						'<td class="tableTitle"><a href="javascript:viewBoard(\''+obj._id+'\');"><span>'+obj.title+'</span></a></td>'+
+						'<td class="tableId"><span>'+obj.name+'</span></td>'+
+						'<td>'+obj.yy+'-'+obj.mm+'-'+obj.dd+'</td>'+
+						'<td>'+obj.review_count+'</td>'+
+					'</tr>';
+				$("#gridtable").append(contents);
+				/*$("#gridtable").append('<tr><td>'+(i+1)+'</td><td><a href="javascript:viewBoard(\''+obj._id
+						+'\');">'+obj.title+'</a></td><td>'+obj.name+'</td><td>'
+						+obj.yy+'-'+obj.mm+'-'+obj.dd+'</td><td>'+obj.review_count+'</td></tr>');*/
+			}
+			for (i = 0; i < data.totalPage; i++) {
+				if (data.curPage == i+1) {
+					$("#page").append('<li class="active">'+(i+1)+'</li>');
+				} else {
+					$("#page").append('<li><a href="javascript:getPage('+(i+1)+');">'+(i+1)+'</a></li>');
+				}
+			}
+			$('#total').html('총 '+data.total+'건');
+		});
+		socket.on('socket_evt_get_bbs_article',function(data){
+			data = JSON.parse(data);
+			data = data[0];
+			$("#board_text").html('<br><h4>'+data.title+'</h4><br>글쓴이 : '+data.name+'<p align=right>작성일 : '+
+					data.yy+'-'+data.mm+'-'+data.dd+' '+data.hh+':'+data.mm2+'&nbsp;&nbsp;&nbsp;&nbsp;조회수 : '+
+					data.review_count+'</p>'+data.message+'<br><br>');
+			$("#board_edit_name").val(data.name);
+			$("#board_edit_title").val(data.original_title);
+			$("#board_edit_message").val(data.original_message);
+			$("#board_comment").html('');
+			for (var i = 0; i < data.comments.length; i++) {
+				var obj = data.comments[i];
+				$("#board_comment").append('<hr><b>'+obj.name+'</b>&nbsp;&nbsp;'+
+						obj.yy+'-'+obj.mm+'-'+obj.dd+' '+obj.hh+':'+obj.mm2+
+						'<p align=right><a href="javascript:deleteComment(\''+obj.name+'\');">댓글삭제</a></p>'+obj.comment+'<br><br>');
+			}
+		});
+		socket.on('socket_evt_delete_bbs_article_success',function(data){
+			viewList();
+		});
+		socket.on('socket_evt_delete_bbs_article_fail',function(data){
+			alert('암호가 틀립니다.');
+		});
+		socket.on('socket_evt_modify_bbs_article_success',function(data){
+			cancelEditArticle();
+	    	socket.emit('get_bbs_article','{"ip":"'+ip()+'","_id":"'+article_id+'"}');
+		});
+		socket.on('socket_evt_check_bbs_article_password_success',function(data){
+			editArticle();
+		});
+		socket.on('socket_evt_check_bbs_article_password_fail',function(data){
+			alert('암호가 틀립니다.');
+		});
+    });
+    function getPage(page) {
+    	if (keyword == '') {
+    		socket.emit('get_bbs','{"ip":"'+ip()+'","page":"'+page+'","type":"'+typeStr+'"}');
+    	} else {
+    		socket.emit('get_bbs','{"ip":"'+ip()+'","page":"'+page+'","type":"'+typeStr+
+    				'","keyword":"'+keyword+'"}');
+    	}
+    	
+    }
+    
+    function deleteComment(name) {
+    	var password = prompt("댓글의 암호를 입력하세요.");
+    	if (password == null || password == undefined || password == '') {
+    		
+    	} else {
+    		socket.emit('delete_bbs_comment','{"ip":"'+ip()+'","_id":"'+article_id+'","name":"'+name+
+    				'","password":"'+password+'"}');
+    	}
+    	//alert(password);
+    }
+    
+    function sendComment() {
+    	var name = $("#comment_name").val();
+    	var password = $("#comment_password").val();
+    	var hidden = $("input:checkbox[id='comment_hidden']").is(":checked");
+    	var comment = $("#comment_comment").val();
+    	//alert(name+"\n"+password+"\n"+hidden+"\n"+comment);
+    	if (name == '' || password == '' || comment == '') {
+    		alert('댓글 내용을 모두 입력하세요.')
+    	} else {
+    		socket.emit('set_bbs_comment','{"ip":"'+ip()+'","_id":"'+article_id+'","name":"'+name+
+    				'","password":"'+password+'","hidden":"'+hidden+'","comment":"'+comment+'"}');
+    		$("#comment_name").val('');
+    		$("#comment_password").val('');
+    		$("input:checkbox[id='comment_hidden']").attr("checked", false);
+    		$("#comment_comment").val('');
+    	}
+    }
+    
+    function checkPassword() {
+    	var password = prompt("글의 암호를 입력하세요.");
+		if (password == null || password == undefined || password == '') {
+    		
+    	} else {
+    		socket.emit('check_bbs_article_password','{"ip":"'+ip()+'","_id":"'+article_id+
+    				'","password":"'+password+'"}');
+    	}
+    }
+    
+    function editArticle() {
+    	$("#article_view").slideUp();
+    	$("#article_button").slideUp();
+    	$("#article_comment").slideUp();
+    	$("#article_edit").slideDown();
+    }
+    function cancelEditArticle() {
+    	$("#article_view").slideDown();
+    	$("#article_button").slideDown();
+    	$("#article_comment").slideDown();
+    	$("#article_edit").slideUp();
+    }
+    
+    function modifyBoard() {
+    	var name = $("#board_edit_name").val();
+    	name = encodeURIComponent(name);
+    	var title = $("#board_edit_title").val();
+    	title = encodeURIComponent(title);
+    	var message = $("#board_edit_message").val();
+    	message = encodeURIComponent(message);
+    	socket.emit('modify_bbs_article','{"ip":"'+ip()+'","_id":"'+article_id+
+				'","name":"'+name+'","title":"'+title+'","message":"'+message+'"}');
+    }
+    
+    function deleteBoard() {
+    	var password = prompt("글의 암호를 입력하세요.");
+		if (password == null || password == undefined || password == '') {
+    		
+    	} else {
+    		socket.emit('delete_bbs_article','{"ip":"'+ip()+'","_id":"'+article_id+
+    				'","password":"'+password+'"}');
+    	}
+    }
+    
+    function viewBoard(id) {
+    	//alert(id);
+    	/*$("#list").slideUp();
+    	$("#view").slideDown();
+    	socket.emit('get_bbs_article','{"ip":"'+ip()+'","_id":"'+id+'"}');
+    	article_id = id;*/
+    	var urlString = 'sub202_3.html?article_id='+id;
+        window.location.href = urlString;
+    }
+    
+    function viewList() {
+    	$("#view").slideUp();
+    	$("#list").slideDown();
+    	socket.emit('get_bbs','{"ip":"'+ip()+'"}');//',"keyword":{}}');
+    	article_id = "";
+    }
+	    
+    function find() {
+    	keyword = $("#keyword").val();
+    	socket.emit('get_bbs','{"ip":"'+ip()+'","keyword":"'+$("#keyword").val()+'","type":"'+typeStr+'"}');
+    	$("#keyword").val('');
+    }
+
+	</script>
+</head>
+<body class="sub2">
+	<!--wrapper-->
+	<div class="wrapper">
+
+		<!--header-->
+		<div class="header">
+			<h1><a href="http://www.withteacher.com/"><img src="img/logo.png" alt="위드티처"></a></h1>
+			<ul class="lnb">
+				<li><a href="index.html">홈</a></li>
+				<li>
+					<a href="sub101.html">회사소개</a>
+					<ul class="snb">
+						<li><a href="sub101.html">회사소개</a></li>
+						<li><a href="sub102.html">과외비</a></li>
+						<li><a href="sub103.html">진행절차</a></li>
+					</ul>
+				</li>
+				<li class="active">
+					<a href="sub201.html">게시판</a>
+					<ul class="snb">
+						<li><a href="sub201.html">Q&amp;A</a></li>
+						<li class="active"><a href="sub202.html">이용후기</a></li>
+					</ul>
+				</li>
+				<li><a href="sub301.html">상담신청</a></li>
+				<li><a href="sub401.html">선생님신청</a></li>
+			</ul>
+		</div>
+		<!--//header-->
+
+		<!--container-->
+		<div class="container clearfix">
+			<div class="sidebar">
+				<h2>게시판</h2>
+				<ul class="snb">
+					<li><a href="sub201.html">Q&amp;A</a></li>
+					<li class="active"><a href="sub202.html">이용후기</a></li>
+				</ul>
+			</div>
+			<div class="content">
+				<h2>이용후기</h2>
+				
+				<!--contentForm-->
+				<div class="contentForm">
+					<div class="clearfix">
+						<div class="fLeft" id="total">총 <b>1</b>건</div>
+						
+						<div class="fRight">
+							<form id="form"><input type="text" name="keyword" id="keyword"><a href="javascript:find();" class="btnS">검색</a></form>
+						</div>
+						<div class="fRight">
+							<select name="box" onchange="getText(this)" class="box">
+								<option value="1">전체</option>
+								<option value="2">학부모/학생</option>
+								<option value="3">선생님</option>
+							</select>
+						</div>
+					</div>
+					<table class="table1" summary="Q&amp;A 게시판입니다">
+						<caption>Q&amp;A</caption>
+						<colgroup>
+							<col width="70">
+							<col width="400">
+							<col width="90">
+							<col width="130">
+							<col width="50">
+						</colgroup>
+						<thead>
+							<tr>
+								<th>번호</th>
+								<th>제목</th>
+								<th>글쓴이</th>
+								<th>날짜</th>
+								<th>조회</th>
+							</tr>
+						</thead>
+						<tbody id="gridtable">
+							<tr>
+								<td>3</td>
+								<td class="tableTitle"><a href="sub202_3.html"><span>이용후기입니다</span></a></td>
+								<td class="tableId"><span>김준환김준환김준환</span></td>
+								<td>2015-06-10</td>
+								<td>2684</td>
+							</tr>
+							<tr>
+								<td>2</td>
+								<td class="tableTitle"><a href="sub202_3.html"><span>이용후기입니다.  </span></a></td>
+								<td class="tableId"><span>김준환</span></td>
+								<td>2015-06-10</td>
+								<td>26</td>
+							</tr>
+							<tr>
+								<td>1</td>
+								<td class="tableTitle"><a href="sub202_3.html"><span>이용후기입니다 이용후기입니다 이용후기입니다이용후기입니다 이용후기입니다 이용후기입니다 이용후기입니다이용후기입니다</span></a></td>
+								<td class="tableId"><span>김준환</span></td>
+								<td>2015-06-10</td>
+								<td>26</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div class="clearfix">
+						<a href="sub202_2.html" class="btnM fRight">글쓰기</a>
+					</div>
+
+					<div class="paging">
+						<ul id="page">
+							<li><a href="#">&lt;</a></li>
+							<li><a href="#">1</a></li>
+							<li class="active"><a href="#">2</a></li>
+							<li><a href="#">3</a></li>
+							<li><a href="#">4</a></li>
+							<li><a href="#">5</a></li>
+							<li><a href="#">&gt;</a></li>
+						</ul>
+					</div>
+
+				</div>
+				<!--//contentForm-->
+
+			</div>
+		</div>
+		<!--//container-->
+
+		<!--footer-->
+		<div class="footer">
+			<dl class="clearfix">
+				<dt>상호명</dt>
+					<dd>(주)오픈마인드월드</dd>
+				<dt>사업자등록번호</dt>
+					<dd>110-81-47413</dd>
+				<dt>대표</dt>
+					<dd>이지혜</dd>
+				<dt>개인정보관리책임자</dt>
+					<dd>정금호</dd>
+			</dl>
+			<dl class="clearfix">
+				<dt>사업장주소</dt>
+					<dd>서울시 구로구 구로3동 우림E-BIZ센터2차 407</dd>
+			</dl>
+			<dl class="clearfix">
+				<dt>대표전화</dt>
+					<dd>02-6010-6599</dd>
+				<dt>E-MAIL</dt>
+					<dd>OMWORLDGAME@GMAIL.COM</dd>
+			</dl>
+			<div class="copyright">COPYRIGHT 2014 OPENMINDWORLD ALL RIGHT RESERVED.</div>
+		</div>
+		<!--//footer-->
+
+	</div>
+	<!--//wrapper-->
+</body>
+</html>
